@@ -7,7 +7,6 @@ matplotlib.use('Agg')
 
 st.set_page_config(
     page_title="Job Market Intelligence",
-    page_icon="chart",
     layout="wide"
 )
 
@@ -16,13 +15,8 @@ st.caption("Analyzing 71,913 real AI/Data salary records from 2020-2025 | Built 
 
 DB_PATH = "Data/jobs.db"
 
-@st.cache_resource
-def get_conn():
-    return sqlite3.connect(DB_PATH, check_same_thread=False)
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 
-conn = get_conn()
-
-# Top metrics row
 total = pd.read_sql("SELECT COUNT(*) AS n FROM jobs", conn).iloc[0, 0]
 avg_sal = pd.read_sql("SELECT ROUND(AVG(salary_in_usd), 0) AS s FROM jobs", conn).iloc[0, 0]
 remote_pct = pd.read_sql("""
@@ -30,8 +24,8 @@ remote_pct = pd.read_sql("""
     FROM jobs
 """, conn).iloc[0, 0]
 top_role = pd.read_sql("""
-    SELECT job_title, COUNT(*) AS n FROM jobs
-    GROUP BY job_title ORDER BY n DESC LIMIT 1
+    SELECT job_title FROM jobs
+    GROUP BY job_title ORDER BY COUNT(*) DESC LIMIT 1
 """, conn).iloc[0, 0]
 
 c1, c2, c3, c4 = st.columns(4)
@@ -99,7 +93,7 @@ with tab1:
         GROUP BY remote_ratio
         ORDER BY remote_ratio
     """, conn)
-    st.dataframe(df3, use_container_width=True, hide_index=True)
+    st.dataframe(df3, hide_index=True)
 
 with tab2:
     st.subheader("Average Salary Trend 2020-2025")
@@ -124,7 +118,7 @@ with tab2:
     plt.close()
 
     st.subheader("Year by year breakdown")
-    st.dataframe(df4, use_container_width=True, hide_index=True)
+    st.dataframe(df4, hide_index=True)
 
 with tab3:
     st.subheader("Explore the data yourself")
@@ -168,9 +162,7 @@ with tab3:
             ORDER BY salary_in_usd DESC
             LIMIT 500
         """, conn)
-        st.write(f"Showing top 500 results from your filter")
-        st.dataframe(df_filtered, use_container_width=True, hide_index=True)
+        st.write(f"Showing top 500 results")
+        st.dataframe(df_filtered, hide_index=True)
     else:
         st.info("Select at least one option from each filter above.")
-
-conn.close()
